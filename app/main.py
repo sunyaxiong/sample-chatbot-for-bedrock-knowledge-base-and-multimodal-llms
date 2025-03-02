@@ -58,7 +58,7 @@ def get_video_status(client: Any, invocation_arn: str) -> Dict[str, Any]:
             "error": str(e)
         }
 
-def setup_sidebar(configs: Dict[str, Any]) -> tuple[str, str, bool, str, str]:
+def setup_sidebar(configs: Dict[str, Any]) -> tuple[str, str, bool, str, str, Dict[str, str]]:
     """Setup and handle sidebar UI elements."""
     st.sidebar.title(configs["page_title"])
     
@@ -93,6 +93,19 @@ def setup_sidebar(configs: Dict[str, Any]) -> tuple[str, str, bool, str, str]:
         if not (is_image_model or is_video_model)
         else "None"
     )
+
+    # 添加过滤器 UI
+    active_filters = {}
+    if kb_selection != "None" and not (is_image_model or is_video_model):
+        st.sidebar.markdown("### 知识库过滤器")
+        for filter_config in configs["kb_configs"]["filters"]:
+            filter_value = st.sidebar.selectbox(
+                filter_config["name"],
+                ["无"] + filter_config["values"],
+                key=f"filter_{filter_config['field']}"
+            )
+            if filter_value != "无":
+                active_filters[filter_config["field"]] = filter_value
     
     s3_uri = None
     if is_video_model:
@@ -112,7 +125,7 @@ def setup_sidebar(configs: Dict[str, Any]) -> tuple[str, str, bool, str, str]:
         st.session_state.uploaded_files = st.sidebar.file_uploader("Upload a file", accept_multiple_files=True)
     st.sidebar.button("New Chat", on_click=clear_screen, type="primary")
     
-    return selected_region, selected_model, streaming_on, kb_selection, s3_uri
+    return selected_region, selected_model, streaming_on, kb_selection, s3_uri, active_filters
 
 def main():
     """Main application logic."""
@@ -130,8 +143,7 @@ def main():
             bedrock_agents_client.list_knowledge_bases(maxResults=10)
         )
 
-    selected_region, selected_model, streaming_on, kb_selection, s3_uri = setup_sidebar(configs)
-
+    selected_region, selected_model, streaming_on, kb_selection, s3_uri, active_filters = setup_sidebar(configs)
 
     bedrock_runtime = boto3.client(
         service_name="bedrock-runtime",
@@ -169,6 +181,10 @@ def main():
         configs["kb_configs"],
         kb_id=selected_kb
     )
+
+    # 设置过滤器
+    for field, value in active_filters.items():
+        retriever.set_filter(field, value)
 
     if "messages" not in st.session_state:
         st.session_state.messages = [

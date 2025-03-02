@@ -245,17 +245,75 @@ class KBHandler:
         self.client = client
         self.kb_id = kb_id
         self.params = kb_params
+        self.active_filters = {}
+
+    def set_filter(self, field: str, value: str) -> None:
+        """Set an active filter."""
+        if value:
+            self.active_filters[field] = value
+        elif field in self.active_filters:
+            del self.active_filters[field]
+
+    def _build_filter_criteria(self) -> Optional[Dict[str, Any]]:
+        """Build filter criteria for the knowledge base query."""
+        if not self.active_filters:
+            return None
+
+        filter_criteria = []
+        for field, value in self.active_filters.items():
+            if field == "creation_date":
+                # 处理日期过滤
+                from datetime import datetime, timedelta
+                now = datetime.now()
+                if value == "最近一周":
+                    date_filter = now - timedelta(days=7)
+                elif value == "最近一月":
+                    date_filter = now - timedelta(days=30)
+                elif value == "最近一年":
+                    date_filter = now - timedelta(days=365)
+                filter_criteria.append({
+                    "field": field,
+                    "operator": "GREATER_THAN_OR_EQUAL",
+                    "value": date_filter.isoformat()
+                })
+            else:
+                # 处理其他过滤条件
+                filter_criteria.append({
+                    "field": field,
+                    "operator": "EQUALS",
+                    "value": value
+                })
+
+        return {"filterExpression": filter_criteria} if filter_criteria else None
 
     def get_relevant_docs(self, prompt: str) -> List[Dict[str, Any]]:
         """Retrieve relevant documents from the knowledge base."""
         if not self.kb_id:
             return []
-        
-        return self.client.retrieve(
-            retrievalQuery={"text": prompt},
-            knowledgeBaseId=self.kb_id,
-            retrievalConfiguration=self.params,
-        )["retrievalResults"]
+
+        try:
+            request_body = {
+                "knowledgeBaseId": self.kb_id,
+                "text": prompt,
+                "retrievalConfiguration": self.params.get("vectorSearchConfiguration", {})
+            }
+
+            # 添加过滤条件
+            filter_criteria = self._build_filter_criteria()
+            if filter_criteria:
+                request_body["filterExpression"] = filter_criteria
+
+            response = self.client.retrieve(
+                knowledgeBaseId=self.kb_id,
+                retrievalQuery={
+                    "text": prompt,
+                    **request_body
+                }
+            )
+            return response.get("retrievalResults", [])
+        except Exception as e:
+            st.error(f"Error retrieving from knowledge base: {str(e)}")
+            return []
 
     @staticmethod
     def parse_kb_output_to_string(docs: List[Dict[str, Any]]) -> str:

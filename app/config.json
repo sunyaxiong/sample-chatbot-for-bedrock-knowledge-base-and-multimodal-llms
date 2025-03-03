@@ -28,9 +28,9 @@
     "kb_configs": {
         "vectorSearchConfiguration": {"numberOfResults": 5},
         "filters": [
-            {"name": "文档类型", "field": "document_type", "values": ["pdf", "doc", "txt"]},
-            {"name": "创建日期", "field": "creation_date", "values": ["最近一周", "最近一月", "最近一年"]},
-            {"name": "部门", "field": "department", "values": ["销售", "技术", "市场", "人力资源"]}
+            {"name": "Substance Name", "field": "Substance Name", "values": ["Methyl methacrylate"]},
+            {"name": "Document type", "field": "Document type", "values": ["Timeline of Authorisation Path"]},
+            {"name": "EC No", "field": "EC No", "values": ["201-297-1"]}
         ]
     },
     "multimodal_llms": {

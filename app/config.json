@@ -28,7 +28,6 @@
     "kb_configs": {
         "vectorSearchConfiguration": {"numberOfResults": 5},
         "filters": [
-            {"name": "Substance Name", "field": "Substance Name", "values": ["Methyl methacrylate"]},
             {"name": "Document type", "field": "Document type", "values": ["Timeline of Authorisation Path"]},
             {"name": "EC No", "field": "EC No", "values": ["201-297-1"]}
         ]

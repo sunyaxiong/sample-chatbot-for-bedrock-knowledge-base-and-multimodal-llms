@@ -289,27 +289,27 @@ class KBHandler:
 
         # 分别处理文档类型和日期过滤器
         ecno_filters = []
-        date_filters = []
+        # date_filters = []
         doc_type_filters = []
 
         for field, value in self.active_filters.items():
-            if field == "creation_date":
-                # 处理日期过滤
-                from datetime import datetime, timedelta
-                now = datetime.now()
-                if value == "最近一周":
-                    date_filter = now - timedelta(days=7)
-                elif value == "最近一月":
-                    date_filter = now - timedelta(days=30)
-                elif value == "最近一年":
-                    date_filter = now - timedelta(days=365)
-                date_filters.append({
-                    "greaterThanOrEquals": {
-                        "key": field,
-                        "value": date_filter.isoformat()
-                    }
-                })
-            elif field == "EC No":
+            # if field == "creation_date":
+            #     # 处理日期过滤
+            #     from datetime import datetime, timedelta
+            #     now = datetime.now()
+            #     if value == "最近一周":
+            #         date_filter = now - timedelta(days=7)
+            #     elif value == "最近一月":
+            #         date_filter = now - timedelta(days=30)
+            #     elif value == "最近一年":
+            #         date_filter = now - timedelta(days=365)
+            #     date_filters.append({
+            #         "greaterThanOrEquals": {
+            #             "key": field,
+            #             "value": date_filter.isoformat()
+            #         }
+            #     })
+            if field == "EC No":
                 # 处理文档类型过滤
                 ecno_filters.append({
                     "equals": {
@@ -320,29 +320,22 @@ class KBHandler:
             elif field == "Document type":
                 # 处理部门过滤
                 doc_type_filters.append({
-                    "in": {
+                    "equals": {
                         "key": field,
                         "value": value
                     }
                 })
 
-        # 构建复杂的过滤条件
-        filter_groups = []
-        
-        # 添加文档类型过滤器（OR 关系）
-        if doc_type_filters:
-            filter_groups.append({"orAll": doc_type_filters})
+        # 合并 EC No 和 Document type 过滤器到一个 orAll 关系中
+        combined_filters = ecno_filters + doc_type_filters
+        if combined_filters:
+            return {"orAll": combined_filters}
             
         # 添加日期过滤器
-        if date_filters:
-            filter_groups.extend(date_filters)
-            
-        # 添加部门过滤器（OR 关系）
-        if department_filters:
-            filter_groups.append({"orAll": department_filters})
+        # if date_filters:
+        #     filter_groups.extend(date_filters)
 
-        # 将所有过滤器组合在一起（AND 关系）
-        return {"andAll": filter_groups} if filter_groups else None
+        return None
 
     @staticmethod
     def parse_kb_output_to_string(docs: List[Dict[str, Any]]) -> str:

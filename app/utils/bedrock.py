@@ -287,7 +287,11 @@ class KBHandler:
         if not self.active_filters:
             return None
 
-        filter_criteria = []
+        # 分别处理文档类型和日期过滤器
+        ecno_filters = []
+        date_filters = []
+        doc_type_filters = []
+
         for field, value in self.active_filters.items():
             if field == "creation_date":
                 # 处理日期过滤
@@ -299,22 +303,46 @@ class KBHandler:
                     date_filter = now - timedelta(days=30)
                 elif value == "最近一年":
                     date_filter = now - timedelta(days=365)
-                filter_criteria.append({
+                date_filters.append({
                     "greaterThanOrEquals": {
                         "key": field,
                         "value": date_filter.isoformat()
                     }
                 })
-            else:
-                # 处理其他过滤条件
-                filter_criteria.append({
+            elif field == "EC No":
+                # 处理文档类型过滤
+                ecno_filters.append({
                     "equals": {
                         "key": field,
                         "value": value
                     }
                 })
+            elif field == "Document type":
+                # 处理部门过滤
+                doc_type_filters.append({
+                    "in": {
+                        "key": field,
+                        "value": value
+                    }
+                })
 
-        return {"orAll": filter_criteria} if filter_criteria else None
+        # 构建复杂的过滤条件
+        filter_groups = []
+        
+        # 添加文档类型过滤器（OR 关系）
+        if doc_type_filters:
+            filter_groups.append({"orAll": doc_type_filters})
+            
+        # 添加日期过滤器
+        if date_filters:
+            filter_groups.extend(date_filters)
+            
+        # 添加部门过滤器（OR 关系）
+        if department_filters:
+            filter_groups.append({"orAll": department_filters})
+
+        # 将所有过滤器组合在一起（AND 关系）
+        return {"andAll": filter_groups} if filter_groups else None
 
     @staticmethod
     def parse_kb_output_to_string(docs: List[Dict[str, Any]]) -> str:

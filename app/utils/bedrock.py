@@ -314,7 +314,7 @@ class KBHandler:
                     }
                 })
 
-        return {"andAll": filter_criteria} if filter_criteria else None
+        return {"orAll": filter_criteria} if filter_criteria else None
 
     @staticmethod
     def parse_kb_output_to_string(docs: List[Dict[str, Any]]) -> str:

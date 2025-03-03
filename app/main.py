@@ -97,14 +97,14 @@ def setup_sidebar(configs: Dict[str, Any]) -> tuple[str, str, bool, str, str, Di
     # 添加过滤器 UI
     active_filters = {}
     if kb_selection != "None" and not (is_image_model or is_video_model):
-        st.sidebar.markdown("### 知识库过滤器")
+        st.sidebar.markdown("### Filters")
         for filter_config in configs["kb_configs"]["filters"]:
             filter_value = st.sidebar.selectbox(
                 filter_config["name"],
-                ["无"] + filter_config["values"],
+                ["None"] + filter_config["values"],
                 key=f"filter_{filter_config['field']}"
             )
-            if filter_value != "无":
+            if filter_value != "None":
                 active_filters[filter_config["field"]] = filter_value
     
     s3_uri = None
